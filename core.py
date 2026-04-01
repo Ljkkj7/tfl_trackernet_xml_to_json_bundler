@@ -1,0 +1,151 @@
+import requests
+import xmltodict
+from flask import Flask, jsonify
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+app = Flask(__name__)
+
+class APIBundle:
+    def __init__(self):
+        '''
+        Initialises the APIBundle class.
+        Sets the base URL, API key, line codes, and an empty dictionary array.
+        '''
+        self.base_url = 'https://api.tfl.gov.uk'
+        self.api_key = os.getenv('API_KEY')
+        self.line_codes = [
+            'B',
+            'C',
+            'D',
+            'H',
+            'J',
+            'M',
+            'N',
+            'P',
+            'V',
+            'W'
+        ]
+        self.dict_array = []
+        self.line_status_array = []
+
+    def get_prediction_detailed(self, station_code):
+        '''
+        Takes a single station code
+        Iterates through the line codes
+        Returns a dictionary of all the predictions for that station.
+        '''
+
+        for line_code in self.line_codes:
+            url = f'{self.base_url}/trackernet/PredictionDetailed/{line_code}/{station_code}?app_key={self.api_key}' 
+            try:
+                response = requests.get(url, timeout=2)
+                if response.status_code == 200:
+
+                    parsed_xml = xmltodict.parse(response.content)
+                    print(parsed_xml.keys())
+                    root = parsed_xml.get('ROOT', {})
+
+                    cleaned_data = {
+                        'Line': root.get('Line'),
+                        'LineName' : root.get('LineName'),
+                        'WhenCreated' : root.get('WhenCreated'),
+                        'Station' : root.get('S')
+                    }
+                
+                    self.dict_array.append(cleaned_data)
+
+                else:
+                    print(f'Skipping: {line_code} - {response.status_code}')
+            except requests.exceptions.RequestException as e:
+                print(f'Request Failed: {line_code} - {e}')
+        return self.dict_array
+
+    def get_line_status_from_prediction(self):
+        try:
+            response = requests.get(f'{self.base_url}/trackernet/LineStatus?app_key={self.api_key}', timeout=2)              
+            if response.status_code == 200:
+                parsed_xml = xmltodict.parse(response.content)
+                print(parsed_xml.keys())
+                root = parsed_xml.get('ArrayOfLineStatus', {})
+
+                cleaned_data = {
+                    'LineStatus' : root.get('LineStatus')
+                }
+
+                station_lines = [item['LineName'].replace(' Line', '') for item in self.dict_array]
+
+                print(station_lines)
+
+                # Iterate over line status and only append if line name matches
+                for item in cleaned_data['LineStatus']:
+                    print(item['Line']['@Name'], station_lines)
+                    if item['Line']['@Name'] in station_lines:
+                        self.line_status_array.append(item)
+           
+            else:
+                print(f'Skipping: {response.status_code}')
+        except requests.exceptions.RequestException as e:
+            print(f'Request Failed: {e}')
+        return self.line_status_array
+    
+    def jsonify_response_shaper(self, predictions, statuses):
+        shaped_response = {
+            "station": None,
+            "last_updated": None,
+            "lines": []
+        }
+
+        line_map = [{} for _ in range(len(statuses))]
+
+        shaped_response["station"] = predictions[0]["Station"]["@N"]
+        shaped_response["last_updated"] = predictions[0]["Station"]["@CurTime"]
+
+        for i, line in enumerate(statuses):
+            line_map[i]["name"] = line["Line"]["@Name"]
+            line_map[i]["status"] = line["Status"]["@Description"]
+            line_map[i]["status_details"] = line.get("@StatusDetails") or None
+            line_map[i]["platforms"] = []
+        
+        shaped_response["lines"] = line_map
+
+        for line_index, prediction in enumerate(predictions):
+            platforms = prediction["Station"]["P"]
+            platform_map = [{} for _ in range(len(platforms))]
+
+            for platform_index, platform in enumerate(platforms):
+                trains = platform.get("T")
+
+                if not trains:
+                    continue
+
+                if isinstance(trains, dict):
+                    trains = [trains]
+
+                train = trains[0]
+
+                platform_map[platform_index]['destination'] = train.get('@Destination')
+                platform_map[platform_index]['current_position'] = train.get('@Location')
+                platform_map[platform_index]['platform'] = platform['@N']
+                platform_map[platform_index]['eta_seconds'] = train.get('@SecondsTo')
+            
+            if line_index < len(shaped_response['lines']):
+                shaped_response['lines'][line_index]['platforms'] = platform_map
+            else:
+                break
+        return shaped_response
+
+
+    def run_bundler(self, station_code):
+        response = self.jsonify_response_shaper(self.get_prediction_detailed(station_code), self.get_line_status_from_prediction())
+        return jsonify(response)
+
+
+@app.route('/get_station_info/<station_code>')
+def get_station_info(station_code):
+    return APIBundle().run_bundler(station_code)
+
+if __name__ == '__main__':
+    app.run(debug=True)
