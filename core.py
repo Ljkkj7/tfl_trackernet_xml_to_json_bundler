@@ -1,5 +1,8 @@
 import requests
 import xmltodict
+import asyncio
+import aiohttp
+from aiohttp import ClientSession
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 import os
@@ -31,39 +34,50 @@ class APIBundle:
         self.dict_array = []
         self.line_status_array = []
 
-    def get_prediction_detailed(self, station_code):
+    async def get_prediction_detailed(self, station_code):
         '''
-        Takes a single station code
-        Iterates through the line codes
-        Returns a dictionary of all the predictions for that station.
+        Fetches prediction data for all lines serving the given station.
         '''
+        async with ClientSession() as session:
 
-        for line_code in self.line_codes:
-            url = f'{self.base_url}/trackernet/PredictionDetailed/{line_code}/{station_code}?app_key={self.api_key}' 
-            try:
-                response = requests.get(url, timeout=2)
-                if response.status_code == 200:
+            # Create list of tasks to run concurrently
+            tasks = [
+                self._fetch_prediction(session, line_code, station_code)
+                for line_code in self.line_codes
+            ]
 
-                    parsed_xml = xmltodict.parse(response.content)
-                    print(parsed_xml.keys())
-                    root = parsed_xml.get('ROOT', {})
-
-                    cleaned_data = {
-                        'Line': root.get('Line'),
-                        'LineName' : root.get('LineName'),
-                        'WhenCreated' : root.get('WhenCreated'),
-                        'Station' : root.get('S')
-                    }
-                
-                    self.dict_array.append(cleaned_data)
-
-                else:
-                    print(f'Skipping: {line_code} - {response.status_code}')
-            except requests.exceptions.RequestException as e:
-                print(f'Request Failed: {line_code} - {e}')
+            # Wait for all tasks to complete
+            results = await asyncio.gather(*tasks)
+            self.dict_array = [r for r in results if r is not None]
         return self.dict_array
+    
+    async def _fetch_prediction(self, session, line_code, station_code):
+        '''
+        Fetches prediction data for a single line serving the given station.
+        '''
+        url = f'{self.base_url}/trackernet/PredictionDetailed/{line_code}/{station_code}?app_key={self.api_key}'
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=2)) as response:
+                if response.status == 200:
+                    content = await response.read()
+                    parsed_xml = xmltodict.parse(content)
+                    root = parsed_xml.get('ROOT', {})
+                    return {
+                        'Line': root.get('Line'),
+                        'LineName': root.get('LineName'),
+                        'WhenCreated': root.get('WhenCreated'),
+                        'Station': root.get('S')
+                    }
+                else:
+                    print(f'Skipping: {line_code} - {response.status}')
+        except Exception as e:
+            print(f'Request Failed: {line_code} - Timeout')
+        return None
 
     def get_line_status_from_prediction(self):
+        '''
+        Fetches line status data for all lines serving the given station.
+        '''
         try:
             response = requests.get(f'{self.base_url}/trackernet/LineStatus?app_key={self.api_key}', timeout=2)              
             if response.status_code == 200:
@@ -92,6 +106,9 @@ class APIBundle:
         return self.line_status_array
     
     def jsonify_response_shaper(self, predictions, statuses):
+        '''
+        Shapes the response into a JSON format.
+        '''
         shaped_response = {
             "station": None,
             "last_updated": None,
@@ -142,7 +159,9 @@ class APIBundle:
 
 
     def run_bundler(self, station_code):
-        response = self.jsonify_response_shaper(self.get_prediction_detailed(station_code), self.get_line_status_from_prediction())
+        asyncio.run(self.get_prediction_detailed(station_code))
+        self.get_line_status_from_prediction()
+        response = self.jsonify_response_shaper(self.dict_array, self.line_status_array)
         return jsonify(response)
 
 
