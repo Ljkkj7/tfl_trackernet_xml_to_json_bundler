@@ -124,12 +124,15 @@ class APIBundle:
                 if isinstance(trains, dict):
                     trains = [trains]
 
-                train = trains[0]
+                train_map = [{} for _ in range(len(trains))]
 
-                platform_map[platform_index]['destination'] = train.get('@Destination')
-                platform_map[platform_index]['current_position'] = train.get('@Location')
+                for train_index, train in enumerate(trains):
+                    train_map[train_index]['destination'] = train.get('@Destination')
+                    train_map[train_index]['current_position'] = train.get('@Location')
+                    train_map[train_index]['eta_seconds'] = train.get('@SecondsTo')
+
                 platform_map[platform_index]['platform'] = platform['@N']
-                platform_map[platform_index]['eta_seconds'] = train.get('@SecondsTo')
+                platform_map[platform_index]['trains'] = train_map
             
             if line_index < len(shaped_response['lines']):
                 shaped_response['lines'][line_index]['platforms'] = platform_map
