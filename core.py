@@ -31,13 +31,14 @@ class APIBundle:
             'V',
             'W'
         ]
-        self.dict_array = []
-        self.line_status_array = []
 
     async def get_prediction_detailed(self, station_code):
         '''
         Fetches prediction data for all lines serving the given station.
         '''
+
+        self.dict_array = []
+        
         async with ClientSession() as session:
 
             # Create list of tasks to run concurrently
@@ -78,6 +79,9 @@ class APIBundle:
         '''
         Fetches line status data for all lines serving the given station.
         '''
+
+        self.line_status_array = []
+
         try:
             response = requests.get(f'{self.base_url}/trackernet/LineStatus?app_key={self.api_key}', timeout=2)              
             if response.status_code == 200:
