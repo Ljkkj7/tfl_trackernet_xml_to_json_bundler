@@ -98,10 +98,14 @@ GET /get_station_info/RAT
       "status_details": null,
       "platforms": [
         {
-          "platform": "Northbound",
-          "destination": "Stanmore",
-          "current_position": "At Platform",
-          "eta_seconds": "45"
+          "platform": "Eastbound",
+          "trains": [
+            {
+              "destination": "Stratford",
+              "current_position": "At Platform",
+              "eta_seconds": "45"
+            }
+          ]
         }
       ]
     }
