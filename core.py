@@ -89,7 +89,14 @@ class APIBundle:
                     'LineStatus' : root.get('LineStatus')
                 }
 
-                station_lines = [item['LineName'].replace(' Line', '') for item in self.dict_array]
+                station_lines = []
+
+                for item in self.dict_array:
+                    if item['LineName'] == 'Circle, Hammersmith & City Line':
+                        station_lines.append('Circle')
+                        station_lines.append('Hammersmith & City')
+                    else:
+                        station_lines.append(item['LineName'].replace(' Line', ''))
 
                 print(station_lines)
 
@@ -133,6 +140,7 @@ class APIBundle:
             platform_map = [{} for _ in range(len(platforms))]
 
             for platform_index, platform in enumerate(platforms):
+                print(platform)
                 trains = platform.get("T")
 
                 if not trains:
