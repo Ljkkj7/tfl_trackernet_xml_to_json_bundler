@@ -152,7 +152,7 @@ GET /get_station_info/<station_code>
 - [ ] Add caching layer (e.g. Flask-Caching or Redis) to reduce redundant Trackernet calls
 - [ ] Expose a `/lines` endpoint listing all valid line codes
 - [ ] Add a `/stations` endpoint for station code lookup
-- [ ] Migrate to async requests (e.g. `httpx` with `asyncio`) to parallelise the 10 per-line calls
+- [x] Migrate to async requests (e.g. `httpx` with `asyncio`) to parallelise the 10 per-line calls
 - [ ] Containerise with Docker
 
 ---
