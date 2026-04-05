@@ -31,6 +31,9 @@ service = TFLService(client)
 
 @app.route('/get_station_info/<station_code>')
 def get_station_data(station_code):
+    station_code = station_code.upper()
+    if not check_code_validity(station_code):
+        return jsonify({"error": "Invalid station code"})
     predictions, statuses = asyncio.run(
         service.get_station_data(station_code)
     )
@@ -40,6 +43,10 @@ def get_station_data(station_code):
 @app.route('/get_station_codes')
 def get_station_codes():
     return jsonify(service.get_station_codes())
+
+def check_code_validity(station_code):
+    station_codes = service.get_station_codes()
+    return station_code in station_codes
 
 if __name__ == '__main__':
     app.run(debug=True)
