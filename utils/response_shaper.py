@@ -14,7 +14,10 @@ def response_shaper(predictions, statuses):
     shaped_response["last_updated"] = predictions[0]["Station"]["@CurTime"]
 
     for i, line in enumerate(statuses):
-        line_map[i]["name"] = line["Line"]["@Name"]
+        if line["Line"]["@Name"] == "Circle":
+            line_map[i]["name"] = "Circle, Hammersmith & City Line"
+        else:   
+            line_map[i]["name"] = line["Line"]["@Name"]
         line_map[i]["status"] = line["Status"]["@Description"]
         line_map[i]["status_details"] = line.get("@StatusDetails") or None
         line_map[i]["platforms"] = []

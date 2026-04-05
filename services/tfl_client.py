@@ -42,7 +42,7 @@ class TFLClient:
             ]
             results = await asyncio.gather(*tasks)
             print(results)
-            self.dict_array = [result for result in results if result is not None]
+            self.dict_array = [result for result in results if result]
 
         print(self.dict_array)
         return self.dict_array
