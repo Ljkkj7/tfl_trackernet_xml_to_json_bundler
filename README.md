@@ -113,6 +113,33 @@ GET /get_station_info/RAT
 }
 ```
 
+### `GET /get_station_codes`
+
+Returns a JSON object containing all station codes and their corresponding station names.
+
+**Example Request**
+
+```
+GET /get_station_codes
+```
+
+**Example Response**
+
+```json
+{
+  "ACT": "Acton Town",
+  "ACW": "Acton Works",
+  "AGR": "Arnos Grove (& Sidings)",
+  "ALF": "Alperton",
+  "ALH": "All Hallows",
+  "ALM": "Almond Tree Road",
+  "AMB": "Amersham",
+  "ANF": "Angel",
+  "ANH": "Angel Lane",
+  "ANV": "Arsenal"
+}
+```
+
 ---
 
 ## Architecture
@@ -137,6 +164,17 @@ GET /get_station_info/<station_code>
                 └── Returns Flask jsonify() response
 ```
 
+```
+GET /get_station_codes
+        │
+        ▼
+ APIBundle.get_station_codes()
+        │
+        └── unpack_station_codes()
+                └── Reads stationCodes.csv
+                └── Returns dictionary of station codes and names
+```
+
 ---
 
 ## Notes
@@ -151,7 +189,7 @@ GET /get_station_info/<station_code>
 
 - [ ] Add caching layer (e.g. Flask-Caching or Redis) to reduce redundant Trackernet calls
 - [ ] Expose a `/lines` endpoint listing all valid line codes
-- [ ] Add a `/stations` endpoint for station code lookup
+- [x] Add a `/stations` endpoint for station code lookup
 - [x] Migrate to async requests (e.g. `httpx` with `asyncio`) to parallelise the 10 per-line calls
 - [ ] Containerise with Docker
 

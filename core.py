@@ -6,6 +6,7 @@ from aiohttp import ClientSession
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 import os
+from station_codes import unpack_station_codes
 
 load_dotenv()
 
@@ -169,6 +170,10 @@ class APIBundle:
                 break
         return shaped_response
 
+    def get_station_codes(self):
+        station_codes = unpack_station_codes()
+        return jsonify(station_codes)
+
 
     def run_bundler(self, station_code):
         asyncio.run(self.get_prediction_detailed(station_code))
@@ -180,6 +185,10 @@ class APIBundle:
 @app.route('/get_station_info/<station_code>')
 def get_station_info(station_code):
     return APIBundle().run_bundler(station_code)
+
+@app.route('/get_station_codes')
+def get_station_codes():
+    return APIBundle().get_station_codes()
 
 if __name__ == '__main__':
     app.run(debug=True)
