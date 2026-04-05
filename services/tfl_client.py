@@ -35,3 +35,44 @@ class TFLClient:
             ]
             results = await asyncio.gather(*tasks)
             return [result for result in results if result is not None]
+
+    async def get_line_status_from_prediction(self):
+        '''
+        Fetches line status data for all lines serving the given station.
+        '''
+
+        self.line_status_array = []
+
+        try:
+            response = requests.get(f'{self.base_url}/trackernet/LineStatus?app_key={self.api_key}', timeout=2)              
+            if response.status_code == 200:
+                parsed_xml = xmltodict.parse(response.content)
+                print(parsed_xml.keys())
+                root = parsed_xml.get('ArrayOfLineStatus', {})
+
+                cleaned_data = {
+                    'LineStatus' : root.get('LineStatus')
+                }
+
+                station_lines = []
+
+                for item in self.dict_array:
+                    if item['LineName'] == 'Circle, Hammersmith & City Line':
+                        station_lines.append('Circle')
+                        station_lines.append('Hammersmith & City')
+                    else:
+                        station_lines.append(item['LineName'].replace(' Line', ''))
+
+                print(station_lines)
+
+                # Iterate over line status and only append if line name matches
+                for item in cleaned_data['LineStatus']:
+                    print(item['Line']['@Name'], station_lines)
+                    if item['Line']['@Name'] in station_lines:
+                        self.line_status_array.append(item)
+           
+            else:
+                print(f'Skipping: {response.status_code}')
+        except requests.exceptions.RequestException as e:
+            print(f'Request Failed: {e}')
+        return self.line_status_array
