@@ -11,9 +11,9 @@ class TFLClient:
         self.line_codes = line_codes
 
     async def get_prediction_detailed(self, session, station_code, line_code):
-        url = f'{self.base_url}/trackernet/PredictionDetailed/{line_code}/{station_code}?app_key={self.api_key}'
+        url = f'{self.base_url}/trackernet/PredictionDetailed/{line_code}/{station_code}'
         try:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4)) as response:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4), headers={'app_key': self.api_key}) as response:
                 if response.status == 200:
                     content = await response.read()
                     parsed_xml = xmltodict.parse(content)
@@ -55,7 +55,7 @@ class TFLClient:
         self.line_status_array = []
 
         try:
-            response = requests.get(f'{self.base_url}/trackernet/LineStatus?app_key={self.api_key}', timeout=2)              
+            response = requests.get(f'{self.base_url}/trackernet/LineStatus', timeout=2, headers={'app_key': self.api_key})           
             if response.status_code == 200:
                 parsed_xml = xmltodict.parse(response.content)
                 print(parsed_xml.keys())
