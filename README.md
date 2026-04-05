@@ -68,7 +68,7 @@ API_KEY=your_tfl_api_key_here
 ### Running the server
 
 ```bash
-python core.py
+python app.py
 ```
 
 The server runs on `http://localhost:5000` by default.
