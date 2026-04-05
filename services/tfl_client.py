@@ -1,4 +1,7 @@
 import aiohttp
+from aiohttp import ClientSession
+import asyncio
+import requests
 import xmltodict
 
 class TFLClient:
@@ -7,10 +10,10 @@ class TFLClient:
         self.api_key = api_key
         self.line_codes = line_codes
 
-    async def get_prediction_detailed(self, station_code):
+    async def get_prediction_detailed(self, session, station_code, line_code):
         url = f'{self.base_url}/trackernet/PredictionDetailed/{line_code}/{station_code}?app_key={self.api_key}'
         try:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=2)) as response:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=4)) as response:
                 if response.status == 200:
                     content = await response.read()
                     parsed_xml = xmltodict.parse(content)
@@ -24,17 +27,25 @@ class TFLClient:
                 else:
                     print(f'Skipping: {line_code} - {response.status}')
         except Exception as e:
-            print(f'Request Failed: {line_code} - Timeout')
+            print(f'Request Failed: {line_code} - {e}')
         return None
     
     async def fetch_all_predictions(self, station_code):
-        async with aiohttp.ClientSession() as session:
+
+        self.dict_array = []
+
+        async with ClientSession() as session:
+
             tasks = [
-                self.get_prediction_detailed(line_code, station_code) 
+                self.get_prediction_detailed(session, station_code, line_code) 
                 for line_code in self.line_codes
             ]
             results = await asyncio.gather(*tasks)
-            return [result for result in results if result is not None]
+            print(results)
+            self.dict_array = [result for result in results if result is not None]
+
+        print(self.dict_array)
+        return self.dict_array
 
     async def get_line_status_from_prediction(self):
         '''
@@ -73,6 +84,6 @@ class TFLClient:
            
             else:
                 print(f'Skipping: {response.status_code}')
-        except requests.exceptions.RequestException as e:
+        except Exception as e:
             print(f'Request Failed: {e}')
         return self.line_status_array

@@ -10,4 +10,6 @@ class TFLService:
         predicitons = await self.client.fetch_all_predictions(station_code)
         status = await self.client.get_line_status_from_prediction()
 
+        print(predicitons)
+        print(status)
         return (predicitons, status)
