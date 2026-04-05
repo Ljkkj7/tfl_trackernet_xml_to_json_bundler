@@ -8,10 +8,10 @@ class TFLService:
         self.client = client
 
     async def get_station_data(self, station_code):
-        predicitons = await self.client.fetch_all_predictions(station_code)
+        predictions = await self.client.fetch_all_predictions(station_code)
         status = self.client.get_line_status_from_prediction()
 
-        return (predicitons, status)
+        return (predictions, status)
 
     def get_station_codes(self):
         return unpack_station_codes()
