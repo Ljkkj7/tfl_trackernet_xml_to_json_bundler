@@ -22,6 +22,14 @@ TfL's Trackernet API exposes train prediction and line status data as XML — on
 
 ---
 
+## Engineering Challenges
+
+- Handling inconsistent XML structures where nodes may appear as either single objects or arrays
+- Correlating data across multiple endpoints (predictions vs line status)
+- Managing multiple external API calls efficiently while avoiding blocking on non-serving lines
+
+---
+
 ## Tech Stack
 
 | Layer         | Technology         |
