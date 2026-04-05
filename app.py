@@ -37,5 +37,9 @@ def get_station_data(station_code):
     shaped_response = response_shaper(predictions, statuses)
     return jsonify(shaped_response)
 
+@app.route('/get_station_codes')
+def get_station_codes():
+    return jsonify(service.get_station_codes())
+
 if __name__ == '__main__':
     app.run(debug=True)
