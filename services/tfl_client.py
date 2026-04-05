@@ -47,7 +47,7 @@ class TFLClient:
         print(self.dict_array)
         return self.dict_array
 
-    async def get_line_status_from_prediction(self):
+    def get_line_status_from_prediction(self):
         '''
         Fetches line status data for all lines serving the given station.
         '''

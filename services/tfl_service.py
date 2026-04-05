@@ -9,7 +9,7 @@ class TFLService:
 
     async def get_station_data(self, station_code):
         predicitons = await self.client.fetch_all_predictions(station_code)
-        status = await self.client.get_line_status_from_prediction()
+        status = self.client.get_line_status_from_prediction()
 
         return (predicitons, status)
 
