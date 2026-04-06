@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_caching import Cache
 from services.tfl_service import TFLService
 from services.tfl_client import TFLClient
 from utils.response_shaper import response_shaper
@@ -30,6 +31,7 @@ client = TFLClient(
 service = TFLService(client)
 
 @app.route('/get_station_info/<station_code>')
+@cache.cached(timeout=30, key_prefix='station_%s') # 30 second cache, station data changes frequently
 def get_station_data(station_code):
 
     station_code = station_code.upper()
@@ -45,6 +47,7 @@ def get_station_data(station_code):
     return jsonify(shaped_response)
 
 @app.route('/get_station_codes')
+@cache.cached(timeout=86400) # 24 hour cache, station codes are mostly static
 def get_station_codes():
     return jsonify(service.get_station_codes())
 
