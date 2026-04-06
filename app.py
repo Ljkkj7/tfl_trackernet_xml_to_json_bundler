@@ -30,12 +30,14 @@ client = TFLClient(
 
 service = TFLService(client)
 
+cache = Cache(app, config={'CACHE_TYPE': 'SimpleCache'})
+
 @app.route('/get_station_info/<station_code>')
 @cache.cached(timeout=30, key_prefix='station_%s') # 30 second cache, station data changes frequently
 def get_station_data(station_code):
 
     station_code = station_code.upper()
-    if not check_code_validity(station_code):
+    if not service.check_station_code_validity(station_code):
         return jsonify({"error": "Invalid station code"})
 
     predictions, statuses = asyncio.run(
@@ -51,9 +53,5 @@ def get_station_data(station_code):
 def get_station_codes():
     return jsonify(service.get_station_codes())
 
-def check_code_validity(station_code):
-    station_codes = service.get_station_codes()
-    return station_code in station_codes
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)

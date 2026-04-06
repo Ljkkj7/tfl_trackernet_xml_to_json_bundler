@@ -15,3 +15,6 @@ class TFLService:
 
     def get_station_codes(self):
         return unpack_station_codes()
+
+    def check_station_code_validity(self, station_code):
+        return station_code in self.get_station_codes()

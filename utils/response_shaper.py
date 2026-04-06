@@ -29,8 +29,7 @@ def response_shaper(predictions, statuses):
         platform_map = [{} for _ in range(len(platforms))]
 
         for platform_index, platform in enumerate(platforms):
-            print(platform)
-            trains = platform.get("T")
+            trains = platform.get("T", [])
 
             if not trains:
                 continue
